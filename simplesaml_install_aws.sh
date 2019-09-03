@@ -288,11 +288,13 @@ EOF
 
 echo "        if (\$username == 'admin' AND \$password == \$username) {" >> ${CUSTOM_AUTH_FILE}
 echo "            \$groupname = 'admin';" >> ${CUSTOM_AUTH_FILE}
+echo "            \$email = 'admin@example.com';" >> ${CUSTOM_AUTH_FILE}
 
 for ((USERID=1; USERID<=${USERS}; USERID++))
 do
   echo "        } elseif (\$username == '${USER_BASE}${USERID}' AND \$password == \$username) {" >> ${CUSTOM_AUTH_FILE}
   echo "            \$groupname = 'group${USERID}';" >> ${CUSTOM_AUTH_FILE}
+  echo "            \$email = 'user${USERID}@example.com';" >> ${CUSTOM_AUTH_FILE}
 done
 
     cat >> ${CUSTOM_AUTH_FILE} <<EOF
@@ -304,6 +306,8 @@ done
             'displayName' => array(\$username),
             'eduPersonAffiliation' => array('member', \$username),
             'organizationalUnitName' => array(\$groupname),
+            'mail' => array($email),
+            'email' => array($email),
         );
     }
 }
