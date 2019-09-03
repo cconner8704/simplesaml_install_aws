@@ -7,11 +7,11 @@ Example run:
 ssh -l root <samlhost>
 yum -y install git  
 git clone https://github.com/cmconner156/simplesaml_install_aws
-/bin/bash ./simplesaml_install_config.sh --usercount 10 --userbase ctest --usersource nameid \  
+/bin/bash ./simplesaml_install_aws.sh --usercount 10 --userbase ctest --usersource nameid \  
                                          --nameformat persistent --newsaml  
   
   
-usage: ./simplesaml_install_config.sh [options]  
+usage: ./simplesaml_install_aws.sh [options]  
   
 Install and configure SimpleSAMLPHP.  MUST RUN ON SERVER THAT WILL BE SAML SERVER  
   
@@ -19,7 +19,7 @@ OPTIONS
    -c|--usercount          Number of users to add to SAML config: 1  
    -u|--userbase           Base string to prepend to usernames in SAML config: user  
    -t|--timeout            How long to wait for SAML to startup
-   -z|--workdir            Temp directory to store files: /tmp/simplesaml_install_config  
+   -z|--workdir            Temp directory to store files: /tmp/simplesaml_install_aws  
    -r|--newsaml            Clear out existing SAML and reinstall  
    -s|--usersource         Source for username in SAML, either nameid or attributes: nameid  
    -n|--nameformat         Nameid format, options, transient, persistent, unspecified2, unspecified1: persistent  
@@ -28,7 +28,7 @@ OPTIONS
 
 - Quick start command:
 
-./simplesaml_install_config.sh --newsaml
+./simplesaml_install_aws.sh --newsaml
 
 Troubleshooting:  
 
