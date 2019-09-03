@@ -1,14 +1,12 @@
 #!/bin/bash
 
-set -x
-
 #parse command line arguments
 parse_arguments()
 {
   # Test that we're using compatible getopt version.
   getopt -T > /dev/null
   if [[ $? -ne 4 ]]; then
-    echo "Incompatible getopt version."
+    message "Incompatible getopt version."
     exit 1
   fi
 
@@ -21,8 +19,8 @@ parse_arguments()
   NAMEID_FORMAT="persistent"
   TIMEOUT=120
 
-  GETOPT=`getopt -n $0 -o t:,z:,c:,u:,r,s:,n:,v,? \
-      -l timeout:,workdir:,usercount:,userbase:,newsaml,usersource:,nameformat:,verbose,help \
+  GETOPT=`getopt -n $0 -o t:,z:,c:,u:,r,s:,n:,v,d,? \
+      -l timeout:,workdir:,usercount:,userbase:,newsaml,usersource:,nameformat:,verbose,trace,help \
       -- "$@"`
   eval set -- "$GETOPT"
   while true;
@@ -60,6 +58,10 @@ parse_arguments()
       VERBOSE=1
       shift
       ;;
+    -d|--trace)
+      TRACE=1
+      shift
+      ;;
     -\?|--help)
       usage
       exit 1
@@ -93,6 +95,7 @@ OPTIONS
    -s|--usersource         Source for username in SAML, either nameid or attributes: nameid
    -n|--nameformat         Nameid format, options, transient, persistent, unspecified2, unspecified1: persistent
    -v|--verbose            Verbose logging
+   -t|--trace	           Trace logging
    -?|--help               Show this message.
 EOF
 }
@@ -105,7 +108,7 @@ main()
 
   parse_arguments "$@"
 
-  if [[ ! -z ${VERBOSE} ]]
+  if [[ ! -z ${TRACE} ]]
   then
     set -x
   fi
@@ -124,7 +127,6 @@ main()
   SAML_ADMIN=admin
   SAML_ADMIN_PASS=admin
   TMP_SAML=/tmp/tmpsaml
-  mkdir -p ${TMP_SAML}
   CERT_FILE=${SIMPLE_SAML}/cert/idp.pem
   KEY_FILE=${SIMPLE_SAML}/cert/idp.key
   IDP_METADATA=${TMP_SAML}/idp-metadata.xml
@@ -133,17 +135,17 @@ main()
   CURL=$(which curl)
   if [[ -z ${CURL} ]]
   then
-    echo "curl must be installed and which curl must return path"
+    message "curl must be installed and which curl must return path"
     exit 1
   fi
-  METADATA_CURL="${CURL} -k https://${IDP}/simplesaml/saml2/idp/metadata.php"
+  METADATA_CURL="${CURL} -s -k https://${IDP}/simplesaml/saml2/idp/metadata.php"
   HTTPD_CONF=/etc/httpd/conf.d
 
   #IMPORTANT ADD 443 CHECK
 
   if [[ ! -z ${NEW_SAML_INSTALL} ]]
   then
-    echo "Clearing out existing SAML for new install"
+    message "Clearing out existing SAML for new install"
     rm -Rf ${TMP_SAML}
     rm -Rf ${SIMPLE_SAML}
     rm -Rf /opt/simplesaml*
@@ -154,8 +156,13 @@ main()
 
   if [[ ! ${USER} =~ .*root.* ]]
   then
-    echo "Script must be run as root: exiting"
+    message "Script must be run as root: exiting"
     exit 1
+  fi
+
+  if [[ ! -d ${TMP_SAML} ]]
+  then
+    mkdir -p ${TMP_SAML}
   fi
 
   if [[ ! -d ${WORK_DIR} ]]
@@ -166,15 +173,15 @@ main()
   integer_re='^[0-9]+$'
   if ! [[ ${USERS} =~ ${integer_re} ]]
   then
-    echo "-u <users> must be a number"
+    message "-u <users> must be a number"
     usage
     exit 1
   fi
 
   if [[ ! ${USERNAME_SOURCE} =~ "attributes" ]]
   then
-    echo "Username source was not 'attributes', using 'nameid'.  Only 'attributes' or 'nameid' are allowed"
-    echo "If you do not want 'nameid', then use '--usersource attributes'"
+    message "Username source was not 'attributes', using 'nameid'.  Only 'attributes' or 'nameid' are allowed"
+    message "If you do not want 'nameid', then use '--usersource attributes'"
     USERNAME_SOURCE="nameid"
   fi
 
@@ -192,7 +199,7 @@ main()
       NAMEID_FORMAT="urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified"
       ;;
     *)
-      echo "Only options for --nameformat are transient, persistent, unspecified1, unspecified2, defaulting to transient"
+      message "Only options for --nameformat are transient, persistent, unspecified1, unspecified2, defaulting to transient"
       NAMEID_FORMAT="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"
       ;;
   esac
@@ -219,7 +226,7 @@ EOF
 
     message "Installed required packages for SimpleSAML and configured HTTPD"
     else
-      echo "HTTPD install failed"
+      message "HTTPD install failed"
       exit 1
     fi
 
@@ -229,7 +236,7 @@ EOF
 
     if [[ ! -f ${SAML_CONFIG} ]]
     then
-      echo "SimpleSAML download and extract failed"
+      message "SimpleSAML download and extract failed"
       exit 1
     else
       message "SimpleSAML downloaded and extracted"
@@ -360,7 +367,7 @@ EOF
     message "Creating SAML Certs"
     SSL_SUBJECT="/C=US/ST=CA/L=Bay Area/O=Support/OU=Support SAML/CN=\$(hostname -f)"
     openssl req -newkey rsa:2048 -new -x509 -days 365 -nodes -out ${CERT_FILE} -keyout ${KEY_FILE} -subj "${SSL_SUBJECT}"
-    echo "Created cert files"
+    message "Created cert files"
 
     #Start SimpleSAML by starting HTTPD
     systemctl restart httpd
@@ -379,15 +386,15 @@ EOF
     done
     if [[ -z ${IDP_TEST} ]]
     then
-      echo "Something went wrong, unable to get metadata xml"
+      message "Something went wrong, unable to get metadata xml"
       exit 1
     fi
 
     ${METADATA_CURL} --output ${IDP_METADATA}
-    message "Got IDP metadata and installed xmlsec1 on node1"
+    message "Got IDP metadata: ${IDP_METADATA}"
 
   else
-    echo "SimpleSAML already installed, skipping"
+    message "SimpleSAML already installed, skipping"
   fi
 
 ##############THIS IS TEST STUFF##############
@@ -443,7 +450,7 @@ test_site_ssl() {
   cat < /dev/null > /dev/tcp/${TEST_HOST}/${TEST_PORT} 2>/dev/null
   if [[ $? -gt 0 ]]
   then
-    echo "Nothing listening at ${TEST_CONNECT}"
+    message "Nothing listening at ${TEST_CONNECT}"
     exit 1
   else
     wget --no-check-certificate --spider https://${TEST_CONNECT} 2>/dev/null
@@ -459,6 +466,9 @@ test_site_ssl() {
 message()
 {
   if [[ ! -z ${VERBOSE} ]]
+  then
+    echo "$1"
+  elif [[ -z $2 ]]
   then
     echo "$1"
   fi
