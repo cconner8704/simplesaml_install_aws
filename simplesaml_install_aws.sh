@@ -104,8 +104,6 @@ EOF
 main()
 {
 
-
-
   parse_arguments "$@"
 
   if [[ ! -z ${TRACE} ]]
@@ -113,9 +111,38 @@ main()
     set -x
   fi
 
+  CURL=$(which curl)
+  if [[ -z ${CURL} ]]
+  then
+    message "curl must be installed and which curl must return path"
+    exit 1
+  fi
+
+  MAJOR=$(php -v | grep PHP | grep built | awk '{print $2}' | awk -F\. '{print $1}')
+  MINOR=$(php -v | grep PHP | grep built | awk '{print $2}' | awk -F\. '{print $2}')
+  if [[ ${MAJOR} -lt 6 ]]
+  then
+    if [[ ${MINOR} -lt 5 ]]
+    then
+      message "php 5.5 or greater required, installing"
+      ${CURL} -s -L --output /root/remi-release-7.rpm http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+      ${CURL} -s -L --output /root/epel-release-7-11.noarch.rpm https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm
+      cd /root && rpm -Uvh remi-release-7*.rpm epel-release-7*.rpm
+      yum-config-manager --enable remi-php55
+      yum update php*
+      MAJOR=$(php -v | grep PHP | grep built | awk '{print $2}' | awk -F\. '{print $1}')
+      MINOR=$(php -v | grep PHP | grep built | awk '{print $2}' | awk -F\. '{print $2}')
+      if [[ ${MINOR} -lt 5 ]]
+      then
+        message "php 5.5 update filed, please manually install php 5.5"
+        exit 1
+      fi
+    fi
+  fi
+
   SED=$(which sed)
   SCRIPT_DIR="$( cd -P "$( dirname "$0" )" && pwd )"
-  IDP=$(curl -s http://169.254.169.254/latest/meta-data/public-hostname)
+  IDP=$(${CURL} -s http://169.254.169.254/latest/meta-data/public-hostname)
   SIMPLE_SAML=/opt/simplesamlphp
   SAML_CONFIG=${SIMPLE_SAML}/config/config.php
   SAML_LOG=/var/log/simplesamlphp.log
@@ -131,12 +158,7 @@ main()
   IDP_METADATA=${TMP_SAML}/idp-metadata.xml
   CLIENT_METADATA=${TMP_SAML}/client-metadata.xml
   COOKIE_JAR=${WORK_DIR}/cookie.jar
-  CURL=$(which curl)
-  if [[ -z ${CURL} ]]
-  then
-    message "curl must be installed and which curl must return path"
-    exit 1
-  fi
+
   METADATA_CURL="${CURL} -s -k https://${IDP}/simplesaml/saml2/idp/metadata.php"
   HTTPD_CONF=/etc/httpd/conf.d
 
