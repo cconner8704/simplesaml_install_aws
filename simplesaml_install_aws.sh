@@ -115,8 +115,7 @@ main()
 
   SED=$(which sed)
   SCRIPT_DIR="$( cd -P "$( dirname "$0" )" && pwd )"
-  CLUSTER=$(hostname -f | ${SED} "s/\-[0-9].*//")
-  IDP=$(hostname -f)
+  IDP=$(curl -s http://169.254.169.254/latest/meta-data/public-hostname)
   SIMPLE_SAML=/opt/simplesamlphp
   SAML_CONFIG=${SIMPLE_SAML}/config/config.php
   SAML_LOG=/var/log/simplesamlphp.log
@@ -369,7 +368,7 @@ EOF
 
     # Create cert files
     message "Creating SAML Certs"
-    SSL_SUBJECT="/C=US/ST=CA/L=Bay Area/O=Support/OU=Support SAML/CN=\$(hostname -f)"
+    SSL_SUBJECT="/C=US/ST=CA/L=Bay Area/O=Support/OU=Support SAML/CN=${IDP}"
     openssl req -newkey rsa:2048 -new -x509 -days 365 -nodes -out ${CERT_FILE} -keyout ${KEY_FILE} -subj "${SSL_SUBJECT}"
     message "Created cert files"
 
