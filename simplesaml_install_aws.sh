@@ -128,8 +128,8 @@ main()
       ${CURL} -s -L --output /root/remi-release-7.rpm http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
       ${CURL} -s -L --output /root/epel-release-7-11.noarch.rpm https://dl.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-11.noarch.rpm
       cd /root && rpm -Uvh remi-release-7*.rpm epel-release-7*.rpm
-      yum-config-manager --enable remi-php55
-      yum update php*
+      yum-config-manager --enable remi-php55 -y
+      yum update php* -y
       MAJOR=$(php -v | grep PHP | grep built | awk '{print $2}' | awk -F\. '{print $1}')
       MINOR=$(php -v | grep PHP | grep built | awk '{print $2}' | awk -F\. '{print $2}')
       if [[ ${MINOR} -lt 5 ]]
