@@ -229,7 +229,7 @@ EOF
       exit 1
     fi
 
-    cd /opt && wget -O simplesaml.tar.gz https://simplesamlphp.org/download?latest
+    cd /opt && ${CURL} --output simplesaml.tar.gz https://simplesamlphp.org/download?latest
     tar zxf simplesaml.tar.gz
     ln -s $(ls -d /opt/simplesamlphp*) ${SIMPLE_SAML}
 
