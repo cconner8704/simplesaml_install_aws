@@ -149,6 +149,7 @@ main()
   SAML_DATA=${SIMPLE_SAML}/data
   SAML20_IDP_HOSTED=${SIMPLE_SAML}/metadata/saml20-idp-hosted.php
   SAML20_SP_HOSTED=${SIMPLE_SAML}/metadata/saml20-sp-remote.php
+  SAMLADSF_SP_HOSTED=${SIMPLE_SAML}/metadata/adfs-sp-remote.php
   SAML_AUTHSOURCES=${SIMPLE_SAML}/config/authsources.php
   SAML_ADMIN=admin
   SAML_ADMIN_PASS=admin
@@ -421,6 +422,12 @@ EOF
   else
     message "SimpleSAML already installed, skipping"
   fi
+
+  message "YOU NEED THESE CONFIGS FOR YOUR SSO SP"
+  message "SimpleSAML SSO URL:"
+  cat ${IDP_METADATA} | grep "SingleSignOnService" | awk -FLocation=\" '{print $2}' | awk -F\" '{print $1}'
+  message "SimpleeSAML Cert:"
+  cat ${IDP_METADATA} | grep "X509Certificate" | uniq | awk -F\> '{print $2}' | awk -F\< '{print $1}'
 
 ##############THIS IS TEST STUFF##############
 
